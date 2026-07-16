@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+// Read secrets from secrets.properties (gitignored)
+def secretsProps = new Properties()
+def secretsFile = rootProject.file('secrets.properties')
+if (secretsFile.exists()) {
+    secretsProps.load(new FileInputStream(secretsFile))
+}
+
+android {
+    namespace 'com.umaai.assistant'
+    compileSdk 34
+
+    // AGP 8+ requires explicit opt-in for BuildConfig
+    buildFeatures {
+        buildConfig true
+    }
+
+    defaultConfig {
+        applicationId "com.umaai.assistant"
+        minSdk 26
+        targetSdk 34
+        versionCode 12400
+        versionName "1.24"
+
+        // Inject GitHub token at build time — not in source code
+        // ★ 安全警告: Token 编译进 APK 可被反编译提取
+        // 长期方案: 改用后端代理上传，不在 APK 中存储可写 Token
+        // 短期缓解: 使用 fine-grained token, 只允许 uma-data, 最小权限, 短有效期
+        buildConfigField "String", "GITHUB_TOKEN", "\"${secretsProps.getProperty('GITHUB_TOKEN', '')}\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+}
